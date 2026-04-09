@@ -106,7 +106,7 @@ OLLAMA_MODEL=your_ollama_model
 
 ## Deliverables
 
-- Live Streamlit App URL: `TBD`
+- Live Streamlit App URL: https://salary-prediction-app-production.up.railway.app/
 - Deployed FastAPI Endpoint URL: `TBD`
 - README: included in this repository
 

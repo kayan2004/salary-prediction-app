@@ -33,6 +33,12 @@ def format_currency(value: float) -> str:
     return f"${value:,.0f}"
 
 
+def format_role_label(label: str) -> str:
+    if label == "Other":
+        return "Grouped specialist roles"
+    return label
+
+
 def get_latest_run() -> dict | None:
     url = (
         f"{SUPABASE_URL}/rest/v1/prediction_runs"
@@ -77,9 +83,10 @@ if not predictions:
 
 predictions_df = pd.DataFrame(predictions)
 predictions_df["predicted_salary_in_usd"] = predictions_df["predicted_salary_in_usd"].astype(float)
+predictions_df["job_title_display"] = predictions_df["job_title_clean"].map(format_role_label)
 
 role_df = (
-    predictions_df.groupby("job_title_clean", as_index=False)["predicted_salary_in_usd"]
+    predictions_df.groupby("job_title_display", as_index=False)["predicted_salary_in_usd"]
     .mean()
     .sort_values("predicted_salary_in_usd", ascending=False)
 )
@@ -120,8 +127,8 @@ with st.container(border=True):
 
 metric_1, metric_2, metric_3, metric_4 = st.columns(4)
 metric_1.metric("Average Salary", format_currency(avg_salary))
-metric_2.metric("Highest Role", highest_role["job_title_clean"], format_currency(highest_role["predicted_salary_in_usd"]))
-metric_3.metric("Lowest Role", lowest_role["job_title_clean"], format_currency(lowest_role["predicted_salary_in_usd"]))
+metric_2.metric("Highest Role", highest_role["job_title_display"], format_currency(highest_role["predicted_salary_in_usd"]))
+metric_3.metric("Lowest Role", lowest_role["job_title_display"], format_currency(lowest_role["predicted_salary_in_usd"]))
 metric_4.metric("Top Experience Tier", top_experience["experience_level"], format_currency(top_experience["predicted_salary_in_usd"]))
 
 chart_col, table_col = st.columns([1.4, 1], gap="large")
@@ -129,7 +136,7 @@ chart_col, table_col = st.columns([1.4, 1], gap="large")
 with chart_col:
     st.subheader("Average Predicted Salary by Role")
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.bar(role_df["job_title_clean"], role_df["predicted_salary_in_usd"], color="#1f77b4")
+    ax.bar(role_df["job_title_display"], role_df["predicted_salary_in_usd"], color="#1f77b4")
     ax.set_ylabel("Average Salary (USD)")
     ax.set_xlabel("Job Title")
     ax.set_title("Role Comparison")
@@ -142,9 +149,9 @@ with chart_col:
 
 with table_col:
     st.subheader("Snapshot")
-    st.write(f"Highest-paying role: **{highest_role['job_title_clean']}**")
+    st.write(f"Highest-paying role: **{highest_role['job_title_display']}**")
     st.write(f"Average salary for that role: **{format_currency(highest_role['predicted_salary_in_usd'])}**")
-    st.write(f"Lowest-paying role: **{lowest_role['job_title_clean']}**")
+    st.write(f"Lowest-paying role: **{lowest_role['job_title_display']}**")
     st.write(f"Average salary for that role: **{format_currency(lowest_role['predicted_salary_in_usd'])}**")
     st.write(f"Top experience tier: **{top_experience['experience_level']}**")
     st.write(f"Average salary for that tier: **{format_currency(top_experience['predicted_salary_in_usd'])}**")
@@ -217,5 +224,7 @@ with extra_chart_col_2:
 
 st.subheader("Prediction Records")
 display_df = predictions_df.copy()
+display_df["job_title_clean"] = display_df["job_title_display"]
+display_df = display_df.drop(columns=["job_title_display"])
 display_df["predicted_salary_in_usd"] = display_df["predicted_salary_in_usd"].map(format_currency)
 st.dataframe(display_df, use_container_width=True, hide_index=True)

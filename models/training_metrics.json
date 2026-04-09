@@ -1,0 +1,7 @@
+{
+  "mae": 28987.7245,
+  "r2": 0.5612,
+  "train_rows": 485,
+  "test_rows": 122,
+  "feature_count": 146
+}
